@@ -20,9 +20,10 @@ class DataLoader():
             raise IOError(err)
         self.line_count = int(result.strip().split()[0])
 
-    def load_subreddits(self, subreddits=None, save=False):
+    def load_subreddits(self, subreddits=None, save=False, limit=float('inf')):
         X = []
         y = []
+        count = 0
 
         with open('corpus-webis-tldr-17.json', 'r') as data:
             for i, line in enumerate(data):
@@ -33,6 +34,9 @@ class DataLoader():
                     continue
                 X.append(sample['content'])
                 y.append(sample['subreddit'])
+                count += 1
+                if count >= limit:
+                    break
             print(f'{" " * 50}', end='\r')
             print(f'Loaded {self.line_count}/{self.line_count}')
 

@@ -58,6 +58,7 @@ valid_encodings = tokenizer(valid_texts, truncation=True, padding=True, max_leng
 
 
 class RedditDataset(torch.utils.data.Dataset):
+
     def __init__(self, encodings, labels):
         self.encodings = encodings
         self.labels = labels
@@ -76,7 +77,8 @@ train_dataset = RedditDataset(train_encodings, train_labels)
 valid_dataset = RedditDataset(valid_encodings, valid_labels)
 
 # load the model and pass to CUDA
-model = BertForSequenceClassification.from_pretrained(model_name, num_labels=len(target_names))
+model = BertForSequenceClassification.from_pretrained(model_name,
+                                                      num_labels=len(target_names)).to("cuda")
 
 
 def compute_metrics(pred):
@@ -92,25 +94,25 @@ def compute_metrics(pred):
 training_args = TrainingArguments(
     output_dir='./results',  # output directory
     num_train_epochs=3,  # total number of training epochs
-    per_device_train_batch_size=8,  # batch size per device during training
+    per_device_train_batch_size=4,  # batch size per device during training
     per_device_eval_batch_size=20,  # batch size for evaluation
     warmup_steps=500,  # number of warmup steps for learning rate scheduler
     weight_decay=0.01,  # strength of weight decay
     logging_dir='./logs',  # directory for storing logs
     load_best_model_at_end=True,  # load the best model when finished training (default metric is
-                                  # loss) but you can specify `metric_for_best_model` argument to
-                                  # change to accuracy or other metric
+    # loss) but you can specify `metric_for_best_model` argument to
+    # change to accuracy or other metric
     logging_steps=400,  # log & save weights each logging_steps
     save_steps=400,
     evaluation_strategy="steps",  # evaluate each `logging_steps`
 )
 
 trainer = Trainer(
-    model=model,                         # the instantiated Transformers model to be trained
-    args=training_args,                  # training arguments, defined above
-    train_dataset=train_dataset,         # training dataset
-    eval_dataset=valid_dataset,          # evaluation dataset
-    compute_metrics=compute_metrics,     # the callback that computes metrics of interest
+    model=model,  # the instantiated Transformers model to be trained
+    args=training_args,  # training arguments, defined above
+    train_dataset=train_dataset,  # training dataset
+    eval_dataset=valid_dataset,  # evaluation dataset
+    compute_metrics=compute_metrics,  # the callback that computes metrics of interest
 )
 
 # train the model
