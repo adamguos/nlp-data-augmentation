@@ -6,14 +6,20 @@ from sklearn.svm import SVC
 
 if __name__ == '__main__':
     dl = DataLoader(verbose=True)
-    X, y, classes = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'], save=False)
-    dl.export_for_eda(X, y)
+    # X, y, classes = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'])
+    # dl.export_for_eda(X, y)
+    X, y = dl.import_from_eda()
     X = dl.preprocess_bow(X)
 
     vectorizer = TfidfVectorizer(max_features=10000, ngram_range=(1, 2))
     classifier = SVC()
     model = Pipeline([('vectorizer', vectorizer), ('classifier', classifier)])
 
-    scores = cross_validate(model, X, y, scoring=['accuracy', 'precision', 'recall', 'f1'])
+    scores = cross_validate(model,
+                            X,
+                            y,
+                            scoring=['accuracy', 'precision', 'recall', 'f1'],
+                            verbose=1000,
+                            n_jobs=-1)
     print(scores)
     breakpoint()

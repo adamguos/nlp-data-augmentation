@@ -92,3 +92,18 @@ class DataLoader():
         with open(path, 'w') as f:
             for text, label in zip(X, y):
                 f.write(f'{label}\t{text}\n')
+
+    def import_from_eda(self):
+        path = 'eda_nlp/data/eda_reddit.txt'
+        X = []
+        y = []
+        with open(path, 'r') as f:
+            for line in f:
+                tab = line.index('\t')
+                label = line[:tab]
+                text = line[tab + 1:]
+
+                X.append(text)
+                y.append(int(label))
+
+        return X, y
