@@ -1,12 +1,21 @@
 import json
+import re
 import subprocess
 
+import nltk
+nltk.download('omw-1.4')
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('wordnet')
+
+from nltk.stem import SnowballStemmer, WordNetLemmatizer
+from nltk.tokenize import word_tokenize
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 
 
 class DataLoader():
-    def __init__(self, file='corpus-webis-tldr-17.json', verbose=False):
+    def __init__(self, file='corpus-webis-tldr-17.json', verbose=True):
         self.file = file
         self.verbose = verbose
         self.get_line_count()
@@ -32,13 +41,15 @@ class DataLoader():
                 sample = json.loads(line)
                 if subreddits is not None and sample['subreddit'] not in subreddits:
                     continue
-                X.append(sample['content'])
+                content = sample['content'].replace('\n', ' ').replace('\r', '')
+                X.append(content)
                 y.append(sample['subreddit'])
                 count += 1
                 if count >= limit:
                     break
-            print(f'{" " * 50}', end='\r')
-            print(f'Loaded {self.line_count}/{self.line_count}')
+            if self.verbose:
+                print(f'{" " * 50}', end='\r')
+                print(f'Loaded {self.line_count}/{self.line_count}')
 
         le = LabelEncoder()
         y = le.fit_transform(y)
@@ -52,35 +63,32 @@ class DataLoader():
 
         return X, y, le.classes_
 
-    def load_random_sample(self, ratio=1, save=False):
-        rng = np.random.default_rng(47)
-        index_choices = np.sort(
-            rng.choice(np.arange(self.line_count), size=int(self.line_count * ratio),
-                       replace=False))
+    def preprocess_bow(self, X):
+        stopwords = nltk.corpus.stopwords.words('english')
+        stemmer = SnowballStemmer('english')
+        lemmatizer = WordNetLemmatizer()
 
-        X = []
-        y = []
+        for i, _ in enumerate(X):
+            if self.verbose and i % 1000 == 0:
+                print(f'Preprocessing {i}/{len(X)}...', end='\r')
 
-        with open('corpus-webis-tldr-17.json', 'r') as data:
-            j = 0
-            for i, line in enumerate(data):
-                if index_choices[j] == i:
-                    sample = json.loads(line)
-                    X.append(sample['content'])
-                    y.append(sample['subreddit'])
-                    j += 1
-                    if self.verbose:
-                        print(f'{j}/{len(index_choices)}')
-                    if j >= len(index_choices):
-                        break
+            text = re.sub(r'[^\w\s]', '', X[i].lower().strip())
+            tokens = text.split()
+            # tokens = word_tokenize(X[i])
+            tokens = [t for t in tokens if t not in stopwords]
 
-        if save:
-            with open(f'corpus-{ratio}.json', 'w') as f:
-                json.dump({'X': X, 'y': y}, f)
+            tokens = [stemmer.stem(token) for token in tokens]
+            tokens = [lemmatizer.lemmatize(token) for token in tokens]
+            X[i] = ' '.join(tokens)
 
-        return X, y
+        if self.verbose:
+            print(f'{" " * 50}', end='\r')
+            print(f'Preprocessed {len(X)}/{len(X)}')
 
+        return X
 
-if __name__ == '__main__':
-    dl = DataLoader(verbose=True)
-    X, y = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'], save=False)
+    def export_for_eda(self, X, y):
+        path = 'eda_nlp/data/reddit.txt'
+        with open(path, 'w') as f:
+            for text, label in zip(X, y):
+                f.write(f'{label}\t{text}\n')
