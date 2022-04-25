@@ -4,11 +4,9 @@ from sklearn.model_selection import cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 
-if __name__ == '__main__':
-    dl = DataLoader(verbose=True)
-    # X, y, classes = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'])
-    # dl.export_for_eda(X, y)
-    X, y = dl.import_from_eda()
+
+def svm_test(X, y):
+    dl = DataLoader()
     X = dl.preprocess_bow(X)
 
     vectorizer = TfidfVectorizer(max_features=10000, ngram_range=(1, 2))
@@ -19,7 +17,23 @@ if __name__ == '__main__':
                             X,
                             y,
                             scoring=['accuracy', 'precision', 'recall', 'f1'],
+                            return_train_score=True,
                             verbose=1000,
                             n_jobs=-1)
-    print(scores)
-    breakpoint()
+    return scores
+
+
+def eda():
+    dl = DataLoader()
+    X, y = dl.import_from_eda()
+    svm_test(X, y)
+
+
+def unaltered():
+    dl = DataLoader()
+    X, y = dl.import_unaltered_reddit()
+    svm_test(X, y)
+
+
+if __name__ == '__main__':
+    unaltered()

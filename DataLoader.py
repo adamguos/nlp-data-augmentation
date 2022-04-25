@@ -102,7 +102,7 @@ class DataLoader:
             for line in f:
                 tab = line.index("\t")
                 label = line[:tab]
-                text = line[tab + 1 :]
+                text = line[(tab + 1):]
 
                 X.append(text)
                 y.append(int(label))
@@ -117,7 +117,7 @@ class DataLoader:
             for line in f:
                 tab = line.index("\t")
                 label = line[:tab]
-                text = line[tab + 1 :]
+                text = line[(tab + 1):]
 
                 if int(label) == 1:
                     text = "from lol:" + text
@@ -136,7 +136,7 @@ class DataLoader:
             for line in f:
                 tab = line.index("\t")
                 label = line[:tab]
-                text = line[tab + 1 :]
+                text = line[(tab + 1):]
 
                 X.append(text)
                 y.append(int(label))
