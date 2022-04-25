@@ -13,5 +13,23 @@ Run `chmod +x download.sh` and `./download.sh`
 ```
 from DataLoader import DataLoader
 dl = DataLoader()
-X, y = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals', ...], save=False)
+X, y = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'])
+```
+
+# Run EDA
+
+```
+dl = DataLoader()
+X, y = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'])
+dl.export_for_eda(X, y) # exports eda_nlp/data/reddit.txt
+```
+
+Then run `python eda_nlp/code/augment.py --input=eda_nlp/data/reddit.txt`. Augmented data is
+outputted to `eda_nlp/data/eda_reddit.txt`. Refer to [EDA
+repo](https://github.com/jasonwei20/eda_nlp) for details about the file format.
+
+To use the augmented data,
+
+```
+X, y = dl.import_from_eda()
 ```
