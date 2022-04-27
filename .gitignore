@@ -1,4 +1,4 @@
-*.json
+corpus*.json
 __pycache__/
 reddit-bert-base-uncased/
 
