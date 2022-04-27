@@ -16,15 +16,16 @@ from sklearn.preprocessing import LabelEncoder
 
 
 class DataLoader:
+
     def __init__(self, file="corpus-webis-tldr-17.json", verbose=True):
         self.file = file
         self.verbose = verbose
         self.get_line_count()
 
     def get_line_count(self):
-        p = subprocess.Popen(
-            ["wc", "-l", self.file], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        p = subprocess.Popen(["wc", "-l", self.file],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
         result, err = p.communicate()
         if p.returncode != 0:
             raise IOError(err)
@@ -62,7 +63,7 @@ class DataLoader:
             with open(f'corpus-{"-".join(subreddits)}.json', "w") as f:
                 json.dump({"X": X, "y": y, "target_names": le.classes_}, f)
 
-        return X, y, le.classes_
+        return X, y
 
     def preprocess_bow(self, X):
         stopwords = nltk.corpus.stopwords.words("english")
@@ -88,14 +89,23 @@ class DataLoader:
 
         return X
 
-    def export_for_eda(self, X, y):
-        path = "eda_nlp/data/reddit.txt"
+    def export_for_eda(self, X, y, max_samples=float('inf')):
+        if max_samples:
+            path = f"eda_nlp/data/reddit_{max_samples}.txt"
+        else:
+            path = "eda_nlp/data/reddit.txt"
+
         with open(path, "w") as f:
-            for text, label in zip(X, y):
+            for i, (text, label) in enumerate(zip(X, y)):
+                if i >= max_samples:
+                    break
                 f.write(f"{label}\t{text}\n")
 
-    def import_unaltered_reddit(self):
-        path = "eda_nlp/data/reddit.txt"
+    def import_unaltered_reddit(self, size=None):
+        if size:
+            path = f"eda_nlp/data/reddit_{size}.txt"
+        else:
+            path = "eda_nlp/data/reddit.txt"
         X = []
         y = []
         with open(path, "r") as f:
@@ -128,8 +138,11 @@ class DataLoader:
 
         return X, y
 
-    def import_from_eda(self):
-        path = "eda_nlp/data/eda_reddit.txt"
+    def import_from_eda(self, size=None):
+        if size:
+            path = f"eda_nlp/data/eda_reddit_{size}.txt"
+        else:
+            path = "eda_nlp/data/eda_reddit.txt"
         X = []
         y = []
         with open(path, "r") as f:
@@ -142,3 +155,13 @@ class DataLoader:
                 y.append(int(label))
 
         return X, y
+
+
+if __name__ == '__main__':
+    dl = DataLoader()
+    X, y = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'])
+    dl.export_for_eda(X, y, 50)
+    dl.export_for_eda(X, y, 100)
+    dl.export_for_eda(X, y, 500)
+    dl.export_for_eda(X, y, 1000)
+    dl.export_for_eda(X, y, 5000)

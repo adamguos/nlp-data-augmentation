@@ -1,4 +1,8 @@
+import json
+
 from DataLoader import DataLoader
+
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_validate
 from sklearn.pipeline import Pipeline
@@ -20,20 +24,30 @@ def svm_test(X, y):
                             return_train_score=True,
                             verbose=1000,
                             n_jobs=-1)
+    for k in scores:
+        if type(scores[k]) == np.ndarray:
+            scores[k] = scores[k].tolist()
+
     return scores
 
 
 def eda():
     dl = DataLoader()
     X, y = dl.import_from_eda()
-    svm_test(X, y)
+    return svm_test(X, y)
 
 
 def unaltered():
     dl = DataLoader()
     X, y = dl.import_unaltered_reddit()
-    svm_test(X, y)
+    return svm_test(X, y)
 
 
 if __name__ == '__main__':
-    unaltered()
+    results = {}
+    results['unaltered'] = unaltered()
+    breakpoint()
+    results['eda'] = eda()
+
+    with open('results.json', 'w') as f:
+        json.dump(results, f)
