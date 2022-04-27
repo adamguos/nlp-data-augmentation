@@ -2,6 +2,7 @@ import json
 from statistics import mean, stdev
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import numpy as np
 
 
@@ -23,7 +24,11 @@ def plot_accuracy():
     plt.xlabel('Dataset size')
     plt.ylabel('Accuracy')
     plt.xticks(x, sizes)
+    plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
     plt.show()
+
+    print(eda_acc)
+    print(unaltered_acc)
 
 
 if __name__ == '__main__':
