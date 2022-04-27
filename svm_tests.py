@@ -9,11 +9,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 
 
-def svm_test(X, y):
+def single_svm_test(X, y):
     dl = DataLoader()
     X = dl.preprocess_bow(X)
 
-    vectorizer = TfidfVectorizer(max_features=10000, ngram_range=(1, 2))
+    vectorizer = TfidfVectorizer(max_features=1000, ngram_range=(1, 2))
     classifier = SVC()
     model = Pipeline([('vectorizer', vectorizer), ('classifier', classifier)])
 
@@ -31,23 +31,18 @@ def svm_test(X, y):
     return scores
 
 
-def eda():
+def run_all_tests():
     dl = DataLoader()
-    X, y = dl.import_from_eda()
-    return svm_test(X, y)
-
-
-def unaltered():
-    dl = DataLoader()
-    X, y = dl.import_unaltered_reddit()
-    return svm_test(X, y)
-
-
-if __name__ == '__main__':
+    sizes = [50, 100, 500, 1000, 5000]
     results = {}
-    results['unaltered'] = unaltered()
-    breakpoint()
-    results['eda'] = eda()
+
+    for size in sizes:
+        results[f'eda_{size}'] = single_svm_test(*dl.import_from_eda(size=size))
+        results[f'unaltered_{size}'] = single_svm_test(*dl.import_unaltered_reddit(size=size))
 
     with open('results.json', 'w') as f:
         json.dump(results, f)
+
+
+if __name__ == '__main__':
+    run_all_tests()
