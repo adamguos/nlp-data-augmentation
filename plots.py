@@ -19,7 +19,7 @@ def plot_accuracy():
     plt.plot(x, eda_acc)
     plt.plot(x, unaltered_acc)
     plt.legend(['eda', 'unaltered'], loc=4)
-    plt.title('Accuracy of EDA and unaltered datasets using SVM 1/2-grams')
+    plt.title('Accuracy of EDA and unaltered datasets using SVM')
     plt.xlabel('Dataset size')
     plt.ylabel('Accuracy')
     plt.xticks(x, sizes)
