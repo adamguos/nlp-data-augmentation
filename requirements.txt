@@ -1,3 +1,4 @@
-nlpaug
 gpt-2-simple
+nlpaug
 nltk
+transformers
