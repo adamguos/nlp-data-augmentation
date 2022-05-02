@@ -1,8 +1,8 @@
 # Acknowledgements
 
-[Wei and Zou 2019, EDA: Easy Data Augmentation Techniques for Boosting Performance on Text Classification Tasks](https://arxiv.org/abs/1901.11196)
-
-[GitHub](https://github.com/jasonwei20/eda_nlp)
+Wei and Zou 2019, [EDA: Easy Data Augmentation Techniques for Boosting Performance on Text
+Classification Tasks](https://arxiv.org/abs/1901.11196)
+([GitHub](https://github.com/jasonwei20/eda_nlp))
 
 # Setup
 
