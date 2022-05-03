@@ -1,8 +1,9 @@
-import json
+import os
 
 from DataLoader import DataLoader
 
 import numpy as np
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import cross_validate
 from sklearn.pipeline import Pipeline
@@ -24,25 +25,39 @@ def single_svm_test(X, y):
                             return_train_score=True,
                             verbose=1000,
                             n_jobs=-1)
-    for k in scores:
-        if type(scores[k]) == np.ndarray:
-            scores[k] = scores[k].tolist()
 
-    return scores
+    return scores['test_accuracy'].mean()
 
 
-def run_all_tests():
+def run_svm_tests():
     dl = DataLoader()
     sizes = [50, 100, 500, 1000, 5000]
-    results = {}
+    file_name = 'svm_scores.csv'
+
+    da_methods = {'eda': dl.import_from_eda, 'unaltered': dl.import_unaltered_reddit}
+
+    if os.path.exists(file_name):
+        df = pd.read_csv(file_name, index_col=0)
+    else:
+        df = pd.DataFrame(columns=da_methods.keys())
 
     for size in sizes:
-        results[f'eda_{size}'] = single_svm_test(*dl.import_from_eda(size=size))
-        results[f'unaltered_{size}'] = single_svm_test(*dl.import_unaltered_reddit(size=size))
+        if size not in df.index:
+            df.loc[size] = np.nan
 
-    with open('results.json', 'w') as f:
-        json.dump(results, f)
+        for method_name in da_methods:
+            da_method = da_methods[method_name]
+
+            if method_name not in df.columns:
+                df.insert(loc=0, column=method_name, value=np.nan)
+
+            if np.isnan(df.loc[size][method_name]):
+                X, y = da_method(size=size)
+                df.loc[size][method_name] = single_svm_test(X, y)
+
+            print(df)
+            df.to_csv(file_name)
 
 
 if __name__ == '__main__':
-    run_all_tests()
+    run_svm_tests()
