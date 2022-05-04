@@ -1,7 +1,7 @@
 import json
 import re
 import subprocess
-
+import os
 import nltk
 
 nltk.download("omw-1.4")
@@ -12,8 +12,8 @@ nltk.download("wordnet")
 from nltk.stem import SnowballStemmer, WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import LabelEncoder
-
 
 class DataLoader:
 
@@ -88,7 +88,7 @@ class DataLoader:
             print(f"Preprocessed {len(X)}/{len(X)}")
 
         return X
-
+    
     def export_for_eda(self, X, y, max_samples=float('inf')):
         if max_samples:
             path = f"eda_nlp/data/reddit_{max_samples}.txt"
@@ -100,6 +100,24 @@ class DataLoader:
                 if i >= max_samples:
                     break
                 f.write(f"{label}\t{text}\n")
+    
+    def export_for_eda_dir(self, X, y, max_samples):
+        
+        directory = f"eda_nlp/data/reddit_{max_samples}"
+        df = pd.DataFrame(data = {"X": X, "Y": y})
+        if(max_samples*10 > len(df.index)):
+            max_samples = int(len(df.index)/10)
+            print(max_samples)
+        
+        df = df.sample(n=max_samples*10, ignore_index=True)
+
+        for i in range(10): 
+            X = df.loc[(i*max_samples):(i+1)*max_samples-1, "X"].values
+            y = df.loc[(i*max_samples):(i+1)*max_samples-1, "Y"].values
+
+            with open(directory+"/{:d}.txt".format(i), "w") as f:
+                for (text, label) in zip(X, y):
+                    f.write(f"{label}\t{text}\n")
 
     def import_unaltered_reddit(self, size=None):
         if size:
@@ -118,6 +136,23 @@ class DataLoader:
                 y.append(int(label))
 
         return X, y
+    
+    def import_unaltered_reddit_dir(self, size):
+        directory = f"eda_nlp/data/reddit_{size}"
+        p = re.compile('[0-9].txt')
+        for filename in os.listdir(directory):
+            if(p.match(filename)):
+                path = os.path.join(directory, filename)
+                with open(path, "r") as f:
+                    X = []
+                    y = []
+                    for line in f:
+                        tab = line.index("\t")
+                        label = line[:tab]
+                        text = line[(tab + 1):]
+                        X.append(text)
+                        y.append(int(label))
+                yield X,y
 
     def import_gpt_label_reddit(self):
         path = "eda_nlp/data/reddit.txt"
@@ -156,12 +191,28 @@ class DataLoader:
 
         return X, y
 
+    def import_from_eda_dir(self, size):
+        directory = f"eda_nlp/data/reddit_{size}"       
+        p = re.compile('eda_[0-9].txt')
+        for filename in os.listdir(directory):
+            if(p.match(filename)):
+                path = os.path.join(directory, filename)
+                with open(path, "r") as f:
+                    X = []
+                    y = []
+                    for line in f:
+                        tab = line.index("\t")
+                        label = line[:tab]
+                        text = line[(tab + 1):]
+                        X.append(text)
+                        y.append(int(label))
+                yield X,y
 
 if __name__ == '__main__':
     dl = DataLoader()
     X, y = dl.load_subreddits(subreddits=['leagueoflegends', 'AdviceAnimals'])
-    dl.export_for_eda(X, y, 50)
-    dl.export_for_eda(X, y, 100)
-    dl.export_for_eda(X, y, 500)
-    dl.export_for_eda(X, y, 1000)
-    dl.export_for_eda(X, y, 5000)
+    dl.export_for_eda_dir(X, y, 50)
+    dl.export_for_eda_dir(X, y, 100)
+    dl.export_for_eda_dir(X, y, 500)
+    dl.export_for_eda_dir(X, y, 1000)
+    # dl.export_for_eda_dir(X, y, 5000)
