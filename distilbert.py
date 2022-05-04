@@ -128,7 +128,7 @@ def single_distilbert_test(X, y, epochs=EPOCHS):
 
     model = build_model(initialize_base_model())
     num_steps = len(X_train) // BATCH_SIZE
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3)
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=6)
     history = model.fit(x=[X_train_ids, X_train_attention],
                         y=y_train,
                         epochs=epochs,
@@ -180,6 +180,8 @@ def run_distilbert_tests():
         df = pd.DataFrame(columns=da_methods.keys())
 
     for size in sizes:
+        epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
+
         if size not in df.index:
             df.loc[size] = np.nan
 
@@ -191,9 +193,41 @@ def run_distilbert_tests():
 
             if np.isnan(df.loc[size][method_name]):
                 X, y = da_method(size=size)
-                epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
-
                 df.loc[size][method_name] = single_distilbert_test(X, y, epochs=epochs)
+
+            print(df)
+            df.to_csv(file_name)
+
+
+def run_distilbert_tests_dir():
+    dl = DataLoader()
+    sizes = [50, 100, 500, 1000]
+    file_name = 'distilbert_scores_many.csv'
+
+    da_methods = {'unaltered': dl.import_unaltered_reddit_dir, 'eda': dl.import_from_eda_dir}
+
+    if os.path.exists(file_name):
+        df = pd.read_csv(file_name, index_col=0)
+    else:
+        df = pd.DataFrame(columns=da_methods.keys(), dtype=object)
+
+    for size in sizes:
+        epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
+
+        if size not in df.index:
+            df.loc[size] = np.array([np.nan for _ in da_methods], dtype=object)
+
+        for method_name in da_methods:
+            da_method = da_methods[method_name]
+
+            if method_name not in df.columns:
+                df.insert(loc=0, column=method_name, value=np.nan)
+
+            if pd.isnull(df.loc[size][method_name]):
+                results = []
+                for X, y in da_method(size=size):
+                    results.append(single_distilbert_test(X, y, epochs=epochs))
+                df.loc[size][method_name] = results
 
             print(df)
             df.to_csv(file_name)
@@ -238,4 +272,4 @@ def run_distilbert_consistency_tests():
 
 
 if __name__ == '__main__':
-    run_distilbert_tests()
+    run_distilbert_tests_dir()
