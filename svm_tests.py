@@ -1,7 +1,5 @@
 import os
-
 from DataLoader import DataLoader
-
 import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -27,7 +25,6 @@ def single_svm_test(X, y):
                             n_jobs=-1)
 
     return scores['test_accuracy'].mean()
-
 
 def run_svm_tests():
     dl = DataLoader()
@@ -58,6 +55,27 @@ def run_svm_tests():
             print(df)
             df.to_csv(file_name)
 
+def run_svm_tests_dir():
+    dl = DataLoader()
+    sizes = [50,100,500,1000]
+    file_name = 'svm_scores_many.csv'
+    da_methods = {'eda': dl.import_from_eda_folder, 'unaltered': dl.import_unaltered_reddit_folder}
+
+    dat = []
+    for size in sizes: 
+        row = [] 
+        for method_name in da_methods:
+            da_method = da_methods[method_name]
+            col = []
+            for X,y in da_method(size=size):
+                col.append(single_svm_test(X, y))
+            row.append(col)
+        dat.append(row)
+    
+    df = pd.DataFrame(dat,columns = ["eda_means","unaltered_means"])
+    df.index = sizes
+    df.to_csv(file_name)
+    return df
 
 if __name__ == '__main__':
     run_svm_tests()
