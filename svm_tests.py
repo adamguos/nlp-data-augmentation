@@ -26,6 +26,20 @@ def single_svm_test(X, y):
 
     return scores['test_accuracy'].mean()
 
+
+def single_svm_consistency_test(X_orig, y_orig, X_aug, y_aug):
+    dl = DataLoader()
+    X_orig = dl.preprocess_bow(X_orig)
+    X_aug = dl.preprocess_bow(X_aug)
+
+    vectorizer = TfidfVectorizer(max_features=1000, ngram_range=(1, 2))
+    classifier = SVC()
+    model = Pipeline([('vectorizer', vectorizer), ('classifier', classifier)])
+
+    model.fit(X_orig, y_orig)
+    return model.score(X_aug, y_aug)
+
+
 def run_svm_tests():
     dl = DataLoader()
     sizes = [50, 100, 500, 1000, 5000]
@@ -55,27 +69,62 @@ def run_svm_tests():
             print(df)
             df.to_csv(file_name)
 
+
 def run_svm_tests_dir():
     dl = DataLoader()
-    sizes = [50,100,500,1000]
+    sizes = [50, 100, 500, 1000]
     file_name = 'svm_scores_many.csv'
     da_methods = {'eda': dl.import_from_eda_folder, 'unaltered': dl.import_unaltered_reddit_folder}
 
     dat = []
-    for size in sizes: 
-        row = [] 
+    for size in sizes:
+        row = []
         for method_name in da_methods:
             da_method = da_methods[method_name]
             col = []
-            for X,y in da_method(size=size):
+            for X, y in da_method(size=size):
                 col.append(single_svm_test(X, y))
             row.append(col)
         dat.append(row)
-    
-    df = pd.DataFrame(dat,columns = ["eda_means","unaltered_means"])
+
+    df = pd.DataFrame(dat, columns=["eda_means", "unaltered_means"])
     df.index = sizes
     df.to_csv(file_name)
     return df
+
+
+def run_svm_consistency_tests():
+    dl = DataLoader()
+    sizes = [50, 100, 500, 1000, 5000]
+    file_name = 'svm_consistency.csv'
+
+    da_methods = {'unaltered': dl.import_unaltered_reddit, 'eda': dl.import_from_eda}
+
+    if os.path.exists(file_name):
+        df = pd.read_csv(file_name, index_col=0)
+    else:
+        df = pd.DataFrame(columns=da_methods.keys())
+
+    for size in sizes:
+        X_orig, y_orig = dl.import_unaltered_reddit(size=size)
+
+        if size not in df.index:
+            df.loc[size] = np.nan
+
+        for method_name in da_methods:
+            da_method = da_methods[method_name]
+
+            if method_name not in df.columns:
+                df.insert(loc=0, column=method_name, value=np.nan)
+
+            if np.isnan(df.loc[size][method_name]):
+                X_aug, y_aug = da_method(size=size)
+                df.loc[size][method_name] = single_svm_consistency_test(
+                    X_orig, y_orig, X_aug, y_aug)
+
+            print(df)
+            df.to_csv(file_name)
+
 
 if __name__ == '__main__':
     run_svm_tests()
