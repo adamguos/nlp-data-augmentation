@@ -141,6 +141,32 @@ def single_distilbert_test(X, y, epochs=EPOCHS):
     return history.history['val_accuracy'][-1]
 
 
+def single_distilbert_consistency_test(X_orig, y_orig, X_aug, y_aug, epochs=EPOCHS):
+    X_orig = np.array(X_orig)
+    y_orig = np.array(y_orig)
+    X_aug = np.array(X_aug)
+    y_aug = np.array(y_aug)
+
+    tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+
+    X_orig_ids, X_orig_attention = batch_encode(tokenizer, X_orig.tolist())
+    X_aug_ids, X_aug_attention = batch_encode(tokenizer, X_aug.tolist())
+
+    model = build_model(initialize_base_model())
+    num_steps = len(X_orig) // BATCH_SIZE
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=6)
+    history = model.fit(x=[X_orig_ids, X_orig_attention],
+                        y=y_orig,
+                        epochs=epochs,
+                        batch_size=BATCH_SIZE,
+                        steps_per_epoch=num_steps,
+                        validation_data=([X_aug_ids, X_aug_attention], y_aug),
+                        callbacks=[early_stopping],
+                        verbose=2)
+
+    return history.history['val_accuracy'][-1]
+
+
 def run_distilbert_tests():
     dl = DataLoader()
     sizes = [50, 100, 500, 1000, 5000]
@@ -165,10 +191,47 @@ def run_distilbert_tests():
 
             if np.isnan(df.loc[size][method_name]):
                 X, y = da_method(size=size)
-                # epochs = EPOCHS_SMALL if len(X) > 10000 else EPOCHS
                 epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
 
                 df.loc[size][method_name] = single_distilbert_test(X, y, epochs=epochs)
+
+            print(df)
+            df.to_csv(file_name)
+
+
+def run_distilbert_consistency_tests():
+    dl = DataLoader()
+    sizes = [50, 100, 500, 1000, 5000]
+    file_name = 'distilbert_consistency_scores.csv'
+
+    da_methods = {'unaltered': dl.import_unaltered_reddit, 'eda': dl.import_from_eda}
+
+    if os.path.exists(file_name):
+        df = pd.read_csv(file_name, index_col=0)
+    else:
+        df = pd.DataFrame(columns=da_methods.keys())
+
+    for size in sizes:
+        X_orig, y_orig = dl.import_unaltered_reddit(size=size)
+
+        if size not in df.index:
+            df.loc[size] = np.nan
+
+        for method_name in da_methods:
+            da_method = da_methods[method_name]
+
+            if method_name not in df.columns:
+                df.insert(loc=0, column=method_name, value=np.nan)
+
+            if np.isnan(df.loc[size][method_name]):
+                X_aug, y_aug = da_method(size=size)
+                epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
+
+                df.loc[size][method_name] = single_distilbert_consistency_test(X_orig,
+                                                                               y_orig,
+                                                                               X_aug,
+                                                                               y_aug,
+                                                                               epochs=epochs)
 
             print(df)
             df.to_csv(file_name)
