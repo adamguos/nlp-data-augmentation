@@ -1,4 +1,5 @@
 gpt-2-simple
 nlpaug
 nltk
+pandas
 transformers
