@@ -198,6 +198,29 @@ def run_distilbert_tests():
             print(df)
             df.to_csv(file_name)
 
+def run_distilbert_tests_dir():
+    dl = DataLoader()
+    sizes = [50]
+    file_name = 'distilbert_scores_many.csv'
+    da_methods = {'eda': dl.import_from_eda_dir, 'unaltered': dl.import_unaltered_reddit_dir}
+
+    dat = []
+    for size in sizes:
+        row = []
+        for method_name in da_methods:
+            da_method = da_methods[method_name]
+            col = []
+            for X, y in da_method(size=size):
+                epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
+                col.append(single_distilbert_test(X, y,epochs=epochs))
+            row.append(col)
+        dat.append(row)
+
+    df = pd.DataFrame(dat, columns=["eda_means", "unaltered_means"])
+    df.index = sizes
+    df.to_csv(file_name)
+    return df
+
 
 def run_distilbert_consistency_tests():
     dl = DataLoader()
@@ -236,6 +259,30 @@ def run_distilbert_consistency_tests():
             print(df)
             df.to_csv(file_name)
 
+def run_distilbert_consistency_tests_dir():
+    dl = DataLoader()
+    sizes = [50]
+    file_name = 'distilbert_consistency_scores_many.csv'
+    da_methods = {'eda': dl.import_from_eda_dir, 'unaltered': dl.import_unaltered_reddit_dir}
+
+    dat = []
+    for size in sizes:
+        origs = list(dl.import_unaltered_reddit_dir(size))
+        row = []
+        for method_name in da_methods:
+            da_method = da_methods[method_name]
+            augs = list(da_method(size=size))
+            epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
+            col= [single_distilbert_consistency_test(
+                    orig[0], orig[1], aug[0], aug[1],epochs=epochs) for orig, aug in zip(origs,augs)]
+            row.append(col)
+        dat.append(row)
+
+    df = pd.DataFrame(dat, columns=["eda_consistencies", "unaltered_consistencies"])
+    df.index = sizes
+    df.to_csv(file_name)
+    return df
 
 if __name__ == '__main__':
-    run_distilbert_tests()
+    run_distilbert_tests_dir()
+    run_distilbert_consistency_tests_dir()
