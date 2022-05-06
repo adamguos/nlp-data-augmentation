@@ -172,7 +172,11 @@ def run_distilbert_tests():
     sizes = [50, 100, 500, 1000, 5000]
     file_name = 'distilbert_scores.csv'
 
-    da_methods = {'eda': dl.import_from_eda, 'unaltered': dl.import_unaltered_reddit}
+    da_methods = {
+        'eda': dl.import_from_eda,
+        'unaltered': dl.import_unaltered_reddit,
+        'mt': dl.import_from_mt
+    }
 
     if os.path.exists(file_name):
         df = pd.read_csv(file_name, index_col=0)
@@ -197,30 +201,6 @@ def run_distilbert_tests():
 
             print(df)
             df.to_csv(file_name)
-
-
-def run_distilbert_tests_dir():
-    dl = DataLoader()
-    sizes = [50]
-    file_name = 'distilbert_scores_many.csv'
-    da_methods = {'eda': dl.import_from_eda_dir, 'unaltered': dl.import_unaltered_reddit_dir}
-
-    dat = []
-    for size in sizes:
-        row = []
-        for method_name in da_methods:
-            da_method = da_methods[method_name]
-            col = []
-            for X, y in da_method(size=size):
-                epochs = EPOCHS_SMALL if size > 1000 else EPOCHS
-                col.append(single_distilbert_test(X, y, epochs=epochs))
-            row.append(col)
-        dat.append(row)
-
-    df = pd.DataFrame(dat, columns=["eda_means", "unaltered_means"])
-    df.index = sizes
-    df.to_csv(file_name)
-    return df
 
 
 def run_distilbert_tests_dir():
@@ -262,7 +242,11 @@ def run_distilbert_consistency_tests():
     sizes = [50, 100, 500, 1000, 5000]
     file_name = 'distilbert_consistency_scores.csv'
 
-    da_methods = {'unaltered': dl.import_unaltered_reddit, 'eda': dl.import_from_eda}
+    da_methods = {
+        'unaltered': dl.import_unaltered_reddit,
+        'eda': dl.import_from_eda,
+        'mt': dl.import_from_mt
+    }
 
     if os.path.exists(file_name):
         df = pd.read_csv(file_name, index_col=0)
@@ -323,5 +307,4 @@ def run_distilbert_consistency_tests_dir():
 
 
 if __name__ == '__main__':
-    run_distilbert_tests_dir()
-    run_distilbert_consistency_tests_dir()
+    run_distilbert_consistency_tests()

@@ -45,7 +45,11 @@ def run_svm_tests():
     sizes = [50, 100, 500, 1000, 5000]
     file_name = 'svm_scores.csv'
 
-    da_methods = {'eda': dl.import_from_eda, 'unaltered': dl.import_unaltered_reddit}
+    da_methods = {
+        'eda': dl.import_from_eda,
+        'unaltered': dl.import_unaltered_reddit,
+        'mt': dl.import_from_mt
+    }
 
     if os.path.exists(file_name):
         df = pd.read_csv(file_name, index_col=0)
@@ -98,7 +102,11 @@ def run_svm_consistency_tests():
     sizes = [50, 100, 500, 1000, 5000]
     file_name = 'svm_consistency.csv'
 
-    da_methods = {'unaltered': dl.import_unaltered_reddit, 'eda': dl.import_from_eda}
+    da_methods = {
+        'unaltered': dl.import_unaltered_reddit,
+        'eda': dl.import_from_eda,
+        'mt': dl.import_from_mt
+    }
 
     if os.path.exists(file_name):
         df = pd.read_csv(file_name, index_col=0)
@@ -125,6 +133,7 @@ def run_svm_consistency_tests():
             print(df)
             df.to_csv(file_name)
 
+
 def run_svm_consistency_tests_dir():
     dl = DataLoader()
     sizes = [50, 100, 500, 1000]
@@ -138,8 +147,10 @@ def run_svm_consistency_tests_dir():
         for method_name in da_methods:
             da_method = da_methods[method_name]
             augs = list(da_method(size=size))
-            col= [single_svm_consistency_test(
-                    orig[0], orig[1], aug[0], aug[1]) for orig, aug in zip(origs,augs)]
+            col = [
+                single_svm_consistency_test(orig[0], orig[1], aug[0], aug[1])
+                for orig, aug in zip(origs, augs)
+            ]
             row.append(col)
         dat.append(row)
 
@@ -148,5 +159,6 @@ def run_svm_consistency_tests_dir():
     df.to_csv(file_name)
     return df
 
+
 if __name__ == '__main__':
-    run_svm_consistency_tests_dir()
+    run_svm_consistency_tests()
